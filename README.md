@@ -2,6 +2,10 @@
 逆他妈的QQNT Patch文件检测 </br>
 PatchedRelease内有已经去除验证的文件下载
 
+# Patcher
+前往Release下载以ADMIN身份运行,选中QQ文件会自动创建备份文件与修补,显示Patched!即为成功 </br>
+源码在Repo有 
+
 # how2patch
 你需要有FindCrypt插件,IDA 7.7(我的7.7不知道为什么Patch没有应用到输入文件选项,后面我换成8.3了) </br>
 讲的不是很详细,有些加密解密的东东是凭经验看的没有细讲 </br>
