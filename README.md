@@ -1,5 +1,6 @@
 # QQNTFileVerifyPatch
-逆他妈的QQNT Patch文件检测
+逆他妈的QQNT Patch文件检测 </br>
+PatchedRelease内有已经去除验证的文件下载
 
 # how2patch
 你需要有FindCrypt插件,IDA 7.7(我的7.7不知道为什么Patch没有应用到输入文件选项,后面我换成8.3了) </br>
