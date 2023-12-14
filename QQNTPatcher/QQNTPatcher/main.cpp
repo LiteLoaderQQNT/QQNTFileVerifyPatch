@@ -6,9 +6,8 @@
 #include <algorithm>
 #include <filesystem>
 
-inline std::vector<uint8_t> sig = { 0x48,0x89,0xCE,0x48,0x8B,0x11,0x4C,0x8B,0x41,0x08,0x49,0x29,0xD0,0x48,0x8B,0x49,0x18,0xE8 }; // Replace with your specific pattern
-inline std::vector<uint8_t> fixthisshit = { 0x48,0x89,0xCE,0x48,0x8B,0x11,0x4C,0x8B,0x41,0x08,0x49,0x29,0xD0,0x48,0x8B,0x49,0x18,0xB8,0x01,0x00,0x00,0x00 };  // Replace with your specific replacement
-
+inline std::vector<uint8_t> sig = { 0x48,0x89,0xCE,0x48,0x8B,0x11,0x4C,0x8B,0x41,0x08,0x49,0x29,0xD0,0x48,0x8B,0x49,0x18,0xE8 }; 
+inline std::vector<uint8_t> fixthisshit = { 0x48,0x89,0xCE,0x48,0x8B,0x11,0x4C,0x8B,0x41,0x08,0x49,0x29,0xD0,0x48,0x8B,0x49,0x18,0xB8,0x01,0x00,0x00,0x00 }; 
 std::vector<uint8_t> ReadFile(const std::string& file_path) {
     std::ifstream file(file_path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
@@ -41,12 +40,12 @@ std::string SelectPEFile() {
     OPENFILENAME file = { 0 };
     file.hwndOwner = NULL;
     file.lStructSize = sizeof(file);
-    file.lpstrFilter = L"ËùÓÐÎÄ¼þ(*.*)\0*.*\0exeÎÄ¼þ(*.exe)\0*.exe\0";
-    file.lpstrInitialDir = L"";//Ä¬ÈÏµÄÎÄ¼þÂ·¾¶ 
-    file.lpstrFile = szBuffer;//´æ·ÅÎÄ¼þµÄ»º³åÇø 
+    file.lpstrFilter = L"æ‰€æœ‰æ–‡ä»¶(*.*)\0*.*\0exeæ–‡ä»¶(*.exe)\0*.exe\0";
+    file.lpstrInitialDir = L"";//é»˜è®¤çš„æ–‡ä»¶è·¯å¾„ 
+    file.lpstrFile = szBuffer;//å­˜æ”¾æ–‡ä»¶çš„ç¼“å†²åŒº 
     file.nMaxFile = sizeof(szBuffer) / sizeof(*szBuffer);
     file.nFilterIndex = 0;
-    file.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_EXPLORER;//±êÖ¾Èç¹ûÊÇ¶àÑ¡Òª¼ÓÉÏOFN_ALLOWMULTISELECT
+    file.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_EXPLORER;
     if (GetOpenFileName(&file)) {
         int size = WideCharToMultiByte(CP_UTF8, 0, file.lpstrFile, -1, NULL, 0, NULL, NULL); //fuck you cpp
         if (size == 0) {
