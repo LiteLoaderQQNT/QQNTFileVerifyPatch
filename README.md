@@ -1,6 +1,7 @@
 # QQNTFileVerifyPatch
 逆他妈的QQNT Patch文件检测 </br>
-PatchedRelease内有已经去除验证的文件下载
+PatchedRelease内有已经去除验证的文件下载 </br>
+特别说明,LiteLoaderQQNT还没有适配最新版本,请详细阅读原Repo MD,别等下升高版本了降回去收不到讯息了 </br>
 
 # Patcher
 适用版本应该是9.9.2-16183以上都可以用,实测9.9.6-19189，9.9.6-19527可以修补 </br>
