@@ -52,19 +52,19 @@ std::string SelectPEFile() {
     OPENFILENAME file = { 0 };
     file.hwndOwner = NULL;
     file.lStructSize = sizeof(file);
-    file.lpstrFilter = L"所有文件(*.*)\0*.*\0exe文件(*.exe)\0*.exe\0";
+    file.lpstrFilter = L"脣霉脫脨脦脛录镁(*.*)\0*.*\0exe脦脛录镁(*.exe)\0*.exe\0";
     file.lpstrInitialDir = L"";
     file.lpstrFile = szBuffer;
     file.nMaxFile = sizeof(szBuffer) / sizeof(*szBuffer);
     file.nFilterIndex = 0;
     file.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_EXPLORER;
     if (GetOpenFileName(&file)) {
-        int size = WideCharToMultiByte(CP_UTF8, 0, file.lpstrFile, -1, NULL, 0, NULL, NULL); //fuck you cpp
+        int size = WideCharToMultiByte(CP_ACP, 0, file.lpstrFile, -1, NULL, 0, NULL, NULL); //fuck you cpp
         if (size == 0) {
             return NULL;
         }
         std::string result(size-1, 0);
-        WideCharToMultiByte(CP_UTF8, 0, file.lpstrFile, -1, &result[0], size, NULL, NULL);
+        WideCharToMultiByte(CP_ACP, 0, file.lpstrFile, -1, &result[0], size, NULL, NULL);
         return result;
     }
     else {
