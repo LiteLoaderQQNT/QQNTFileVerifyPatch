@@ -5,7 +5,7 @@ PatchedRelease内有已经去除验证的文件下载 </br>
 
 # Patcher
 适用版本应该是9.9.2-16183以上都可以用,实测9.9.6-19189，9.9.6-19527可以修补 </br>
-9.9.1到9.9.2-16183请使用: https://github.com/xh321/LiteLoaderQQNT-PatcherNFixer </br>
+另外一个Patcher(现已支持9.9.2-16183以上版本修补): https://github.com/xh321/LiteLoaderQQNT-PatcherNFixer </br>
 1/22/2024补 根据[issue #1](https://github.com/LiteLoaderQQNT/QQNTFileVerifyPatch/issues/1) 测试,本Patcher在9.9.2-16183版本也适用 </br>
 前往Release下载以ADMIN身份运行,选中QQ文件会自动创建备份文件与修补,显示Patched!即为成功 </br>
 源码在Repo有 
