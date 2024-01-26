@@ -3,3 +3,5 @@
 ################################################################################
 
 /QQNTPatcher/QQNTPatcher/Release
+*.exe
+/QQNTPatcher/.vs/QQNTPatcher/v16
