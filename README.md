@@ -1,7 +1,6 @@
 # QQNTFileVerifyPatch
 逆他妈的QQNT Patch文件检测 </br>
-PatchedRelease内有已经去除验证的文件下载 </br>
-特别说明,LiteLoaderQQNT还没有适配最新版本,请详细阅读原Repo MD,别等下升高版本了降回去收不到讯息了 </br>
+PatchedRelease内有已经去除验证的文件下载
 
 # Patcher
 适用版本应该是9.9.2-16183以上都可以用,实测9.9.6-19189，9.9.6-19527可以修补 </br>
@@ -29,7 +28,7 @@ PatchedRelease内有已经去除验证的文件下载 </br>
 ![Alt text](Image/Img6.png) </br>
 将call xxxx改成mov eax,1 刚刚好字节对得上,然后写出文件即可 </br>
 ![Alt text](Image/Img7.png) </br>
-经测试可以正常使用 (LiteLoaderQQNT什么时候适配 (发出300分贝的猫叫 </br>
+经测试可以正常使用
 
 # 免责声明
 仅供学习,切勿用于违法用途 </br>
