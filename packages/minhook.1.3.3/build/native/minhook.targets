@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\..\lib\native\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <Target Name="BeforeClCompile">
+
+    <!-- Check if the runtime link is dynamic or static -->
+
+    <CreateProperty Value="%(ClCompile.RuntimeLibrary)">
+      <Output TaskParameter="Value" PropertyName="MH_RuntimeLibrary" />
+    </CreateProperty>
+
+    <!-- MH_RuntimeLink corresponds to /MDd, /MD, /MTd and /MT options -->
+
+    <CreateProperty Condition="($(MH_RuntimeLibrary.ToLower().IndexOf('dll')) &gt; -1) And ($(Configuration.ToLower().IndexOf('debug')) &gt; -1)" Value="mdd">
+      <Output TaskParameter="Value" PropertyName="MH_RuntimeLink" />
+    </CreateProperty>
+    <CreateProperty Condition="($(MH_RuntimeLibrary.ToLower().IndexOf('dll')) &gt; -1) And ($(Configuration.ToLower().IndexOf('debug')) == -1)" Value="md">
+      <Output TaskParameter="Value" PropertyName="MH_RuntimeLink" />
+    </CreateProperty>
+    <CreateProperty Condition="($(MH_RuntimeLibrary.ToLower().IndexOf('dll')) == -1) And ($(Configuration.ToLower().IndexOf('debug')) &gt; -1)" Value="mtd">
+      <Output TaskParameter="Value" PropertyName="MH_RuntimeLink" />
+    </CreateProperty>
+    <CreateProperty Condition="($(MH_RuntimeLibrary.ToLower().IndexOf('dll')) == -1) And ($(Configuration.ToLower().IndexOf('debug')) == -1)" Value="mt">
+      <Output TaskParameter="Value" PropertyName="MH_RuntimeLink" />
+    </CreateProperty>
+
+    <!-- MH_ToolSet is toolset except for "_xp" suffix. -->
+
+    <CreateProperty Condition="$(PlatformToolset.ToLower().IndexOf('v90')) == 0" Value="v90">
+      <Output TaskParameter="Value" PropertyName="MH_ToolSet" />
+    </CreateProperty>
+    <CreateProperty Condition="$(PlatformToolset.ToLower().IndexOf('v100')) == 0" Value="v100">
+      <Output TaskParameter="Value" PropertyName="MH_ToolSet" />
+    </CreateProperty>
+    <CreateProperty Condition="$(PlatformToolset.ToLower().IndexOf('v110')) == 0" Value="v110">
+      <Output TaskParameter="Value" PropertyName="MH_ToolSet" />
+    </CreateProperty>
+    <CreateProperty Condition="$(PlatformToolset.ToLower().IndexOf('v120')) == 0" Value="v120">
+      <Output TaskParameter="Value" PropertyName="MH_ToolSet" />
+    </CreateProperty>
+    <CreateProperty Condition="$(PlatformToolset.ToLower().IndexOf('v140')) == 0" Value="v140">
+      <Output TaskParameter="Value" PropertyName="MH_ToolSet" />
+    </CreateProperty>
+    <CreateProperty Condition="$(PlatformToolset.ToLower().IndexOf('v141')) == 0" Value="v141">
+      <Output TaskParameter="Value" PropertyName="MH_ToolSet" />
+    </CreateProperty>
+
+    <!-- Special Cases: Windows Driver Kit -->
+
+    <CreateProperty Condition="$(PlatformToolset.ToLower()) == 'windowsapplicationfordrivers8.0'" Value="v110">
+      <Output TaskParameter="Value" PropertyName="MH_ToolSet" />
+    </CreateProperty>
+    <CreateProperty Condition="$(PlatformToolset.ToLower()) == 'windowsapplicationfordrivers8.1'" Value="v120">
+      <Output TaskParameter="Value" PropertyName="MH_ToolSet" />
+    </CreateProperty>
+    <CreateProperty Condition="$(PlatformToolset.ToLower()) == 'windowsapplicationfordrivers10.0'" Value="v140">
+      <Output TaskParameter="Value" PropertyName="MH_ToolSet" />
+    </CreateProperty>
+
+    <!-- MH_Platform is CPU architecture. "x86" or "x64". -->
+
+    <CreateProperty Condition="$(Platform.ToLower()) == 'win32'" Value="x86">
+      <Output TaskParameter="Value" PropertyName="MH_Platform" />
+    </CreateProperty>
+    <CreateProperty Condition="$(Platform.ToLower()) == 'x64'" Value="x64">
+      <Output TaskParameter="Value" PropertyName="MH_Platform" />
+    </CreateProperty>
+
+    <!-- Suffix of lib file like 'x86-v100-mdd' -->
+
+    <CreateProperty Value="$(MH_Platform)-$(MH_ToolSet)-$(MH_RuntimeLink)">
+      <Output TaskParameter="Value" PropertyName="MH_LibSuffix" />
+    </CreateProperty>
+
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v90-mdd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v90-mdd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v90-md'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v90-md.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v90-mtd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v90-mtd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v90-mt'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v90-mt.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v90-mdd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v90-mdd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v90-md'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v90-md.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v90-mtd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v90-mtd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v90-mt'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v90-mt.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v100-mdd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v100-mdd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v100-md'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v100-md.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v100-mtd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v100-mtd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v100-mt'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v100-mt.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v100-mdd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v100-mdd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v100-md'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v100-md.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v100-mtd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v100-mtd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v100-mt'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v100-mt.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v110-mdd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v110-mdd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v110-md'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v110-md.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v110-mtd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v110-mtd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v110-mt'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v110-mt.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v110-mdd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v110-mdd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v110-md'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v110-md.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v110-mtd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v110-mtd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v110-mt'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v110-mt.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v120-mdd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v120-mdd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v120-md'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v120-md.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v120-mtd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v120-mtd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v120-mt'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v120-mt.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v120-mdd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v120-mdd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v120-md'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v120-md.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v120-mtd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v120-mtd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v120-mt'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v120-mt.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v140-mdd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v140-mdd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v140-md'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v140-md.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v140-mtd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v140-mtd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v140-mt'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v140-mt.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v140-mdd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v140-mdd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v140-md'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v140-md.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v140-mtd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v140-mtd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v140-mt'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v140-mt.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v141-mdd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v141-mdd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v141-md'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v141-md.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v141-mtd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v141-mtd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x86-v141-mt'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x86-v141-mt.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v141-mdd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v141-mdd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v141-md'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v141-md.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v141-mtd'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v141-mtd.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+    <Copy Condition="$(MH_LibSuffix) == 'x64-v141-mt'" SourceFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook-x64-v141-mt.lib" DestinationFiles="$(MSBuildThisFileDirectory)..\..\lib\native\lib\libMinHook.lib" />
+  </Target>
+</Project>
