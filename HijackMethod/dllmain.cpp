@@ -1,10 +1,15 @@
 #include <MinHook.h>
 #include "nt.h"
 #include "scanner.h"
+#if _WIN64
+#define Sig_text "57 41 56 41 54 56 57 53 48 81 ec ?? ?? ?? ?? 48 89 cb 48 8b 05 ?? ?? ?? ?? 48 31 e0 48 89 84 24 ?? ?? ?? ?? 48 8b 49"
+#else
+#define Sig_text "55 89 e5 53 57 56 83 ec ?? 8b 5d ?? a1 ?? ?? ?? ?? 31 e8 89 45 ?? 8b 73 ?? 8b 06 83 78"
+#endif
 
 def_CreateFileW Org_CreateFileW = NULL;
 
-/*
+/* x64
 _BOOL8 __fastcall sub_7FF79DDD5B80(__int64 *a1, __int64 a2, __int64 a3)
 {
   __int64 v4; // rcx
@@ -24,12 +29,40 @@ _BOOL8 __fastcall sub_7FF79DDD5B80(__int64 *a1, __int64 a2, __int64 a3)
   Sig: 57 41 56 41 54 56 57 53 48 81 ec ? ? ? ? 48 89 cb 48 8b 05 ? ? ? ? 48 31 e0 48 89 84 24 ? ? ? ? 48 8b 49
 */
 
+/* x86
+BOOL __cdecl sub_171ECB0(unsigned int *a1)
+{
+  unsigned int v1; // esi
+  unsigned int v2; // eax
+  int v3; // esi
+  int v4; // eax
+  void *v5; // edi
+  unsigned int v6; // esi
+  BOOL v7; // ebx
+  int v8; // eax
+  int v10; // eax
+  int v11; // [esp+0h] [ebp-64h]
+  __int128 v12; // [esp+4h] [ebp-60h] BYREF
+  __int128 v13[4]; // [esp+14h] [ebp-50h] BYREF
+
+  Sig: 55 89 e5 53 57 56 83 ec ?? 8b 5d ?? a1 ?? ?? ?? ?? 31 e8 89 45 ?? 8b 73 ?? 8b 06 83 78
+*/
+
+
+
+#if _WIN64
 typedef BOOL(__fastcall* def_sub_7FF79DDD5B80)(__int64* a1, __int64 a2, __int64 a3);
 def_sub_7FF79DDD5B80 Org_sub_7FF79DDD5B80 = NULL;
-
 BOOL __fastcall Hk_sub_7FF79DDD5B80(__int64* a1, __int64 a2, __int64 a3) {
     return true; //return
 }
+#else
+typedef BOOL(__cdecl* def_sub_7FF79DDD5B80)(unsigned int* a1);
+def_sub_7FF79DDD5B80 Org_sub_7FF79DDD5B80 = NULL;
+BOOL __cdecl Hk_sub_7FF79DDD5B80(unsigned int* a1) {
+    return true; //return
+}
+#endif
 
 HANDLE WINAPI Hk_CreateFileW(
     _In_           LPCWSTR                lpFileName,
@@ -42,7 +75,7 @@ HANDLE WINAPI Hk_CreateFileW(
 ) {
     if (wcsstr(lpFileName,L"launcher.json")!=NULL) {
         if (Org_sub_7FF79DDD5B80 == NULL) {
-            static const auto FileVerify = static_cast<void*>(sig(GetModuleHandleA(NULL), "57 41 56 41 54 56 57 53 48 81 ec ?? ?? ?? ?? 48 89 cb 48 8b 05 ?? ?? ?? ?? 48 31 e0 48 89 84 24 ?? ?? ?? ?? 48 8b 49"));
+            static const auto FileVerify = static_cast<void*>(sig(GetModuleHandleA(NULL), Sig_text));
             if (FileVerify != nullptr) {
                 if (MH_CreateHook(FileVerify, &Hk_sub_7FF79DDD5B80, reinterpret_cast<LPVOID*>(&Org_sub_7FF79DDD5B80)) != MH_OK) {
                     MessageBoxA(nullptr, "MH Hook Hk_sub_7FF79DDD5B80 Error!", "ERROR", MB_ICONERROR | MB_OK);
@@ -52,9 +85,9 @@ HANDLE WINAPI Hk_CreateFileW(
                     MessageBoxA(nullptr, "MH Enable Hk_sub_7FF79DDD5B80 Error!", "ERROR", MB_ICONERROR | MB_OK);
                     exit(1);
                 }
-            }
-            else {
+            } else {
                 MessageBoxA(nullptr, "Sig Not Found!", "ERROR", MB_ICONERROR | MB_OK);
+                exit(1);
             }
         }
     }
