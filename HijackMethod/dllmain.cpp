@@ -2,7 +2,6 @@
 #include "nt.h"
 #include "scanner.h"
 
-inline FILE* m_file{ };
 def_CreateFileW Org_CreateFileW = NULL;
 
 /*
@@ -42,17 +41,20 @@ HANDLE WINAPI Hk_CreateFileW(
     _In_opt_ HANDLE                hTemplateFile
 ) {
     if (wcsstr(lpFileName,L"launcher.json")!=NULL) {
-        static const auto FileVerify = static_cast<void*>(sig(GetModuleHandleA(NULL), "57 41 56 41 54 56 57 53 48 81 ec ?? ?? ?? ?? 48 89 cb 48 8b 05 ?? ?? ?? ?? 48 31 e0 48 89 84 24 ?? ?? ?? ?? 48 8b 49"));
-        if (FileVerify != nullptr) {
-            if (Org_sub_7FF79DDD5B80 == NULL) {
+        if (Org_sub_7FF79DDD5B80 == NULL) {
+            static const auto FileVerify = static_cast<void*>(sig(GetModuleHandleA(NULL), "57 41 56 41 54 56 57 53 48 81 ec ?? ?? ?? ?? 48 89 cb 48 8b 05 ?? ?? ?? ?? 48 31 e0 48 89 84 24 ?? ?? ?? ?? 48 8b 49"));
+            if (FileVerify != nullptr) {
                 if (MH_CreateHook(FileVerify, &Hk_sub_7FF79DDD5B80, reinterpret_cast<LPVOID*>(&Org_sub_7FF79DDD5B80)) != MH_OK) {
-                    MessageBoxA(nullptr, "MH Hook Hk_sub_7FF79DDD5B80 Error!", "ERROR", MB_OK);
+                    MessageBoxA(nullptr, "MH Hook Hk_sub_7FF79DDD5B80 Error!", "ERROR", MB_ICONERROR | MB_OK);
                     exit(1);
                 }
                 if (MH_EnableHook(FileVerify) != MH_OK) {
-                    MessageBoxA(nullptr, "MH Enable Hk_sub_7FF79DDD5B80 Error!", "ERROR", MB_OK);
+                    MessageBoxA(nullptr, "MH Enable Hk_sub_7FF79DDD5B80 Error!", "ERROR", MB_ICONERROR | MB_OK);
                     exit(1);
                 }
+            }
+            else {
+                MessageBoxA(nullptr, "Sig Not Found!", "ERROR", MB_ICONERROR | MB_OK);
             }
         }
     }
@@ -61,15 +63,15 @@ HANDLE WINAPI Hk_CreateFileW(
 
 void Exploit() {
     if (MH_Initialize() != MH_OK) {
-        MessageBoxA(nullptr, "MH Init Error!", "ERROR", MB_OK);
+        MessageBoxA(nullptr, "MH Init Error!", "ERROR", MB_ICONERROR | MB_OK);
         exit(1);
     }
     if (MH_CreateHook(&CreateFileW, &Hk_CreateFileW, reinterpret_cast<LPVOID*>(&Org_CreateFileW)) != MH_OK) {
-        MessageBoxA(nullptr, "MH Hook CreateFileW failed!", "ERROR", MB_OK);
+        MessageBoxA(nullptr, "MH Hook CreateFileW failed!", "ERROR", MB_ICONERROR | MB_OK);
         exit(1);
     }
     if (MH_EnableHook(&CreateFileW) != MH_OK) {
-        MessageBoxA(nullptr, "MH Enable Hook CreateFileW failed!", "ERROR", MB_OK);
+        MessageBoxA(nullptr, "MH Enable Hook CreateFileW failed!", "ERROR", MB_ICONERROR | MB_OK);
         exit(1);
     }
 }
@@ -90,6 +92,8 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
     }
     return TRUE;
 }
+
+
 
 //dbghelp.dll DLLHijack
 
