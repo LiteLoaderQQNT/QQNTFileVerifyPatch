@@ -1,6 +1,5 @@
 # QQNTFileVerifyPatch
-逆他妈的QQNT Patch文件检测 </br>
-PatchedRelease内有已经去除验证的文件下载
+逆他妈的QQNT Patch文件检测
 
 # Patcher
 适用版本应该是9.9.2-16183以上都可以用,实测9.9.6-19189，9.9.6-19527可以修补 </br>
