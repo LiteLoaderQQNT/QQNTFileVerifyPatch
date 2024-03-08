@@ -10,3 +10,5 @@ x64/Release/dbghelp.dll
 HijackMethod/x64
 /Release
 /HijackMethod/Release
+/HijackMethod_x86/Release
+/HijackMethod_x86/Debug

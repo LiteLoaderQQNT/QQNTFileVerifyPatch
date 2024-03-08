@@ -1,31 +1,23 @@
-#include <MinHook.h>
-#include "nt.h"
-#include "scanner.h"
-#define Sig_text "57 41 56 41 55 41 54 56 57 55 53 48 81 ec ?? ?? ?? ?? 0f 29 bc 24 ?? ?? ?? ?? 0f 29 b4 24 ?? ?? ?? ?? 48 8b 05 ?? ?? ?? ?? 48 31 e0 48 89 84 24 ?? ?? ?? ?? b9"
-
-typedef __int64(*def_sub7FF67F97A5A0)();
-def_sub7FF67F97A5A0 Org_sub_7FF67F97A5A0 = NULL;
-
-__int64 Hk_sub_7FF67F97A5A0() {
-    return (unsigned int)"r.json";
-}
+﻿#include "scanner.h"
+#define Sig_text "75 ?? e8 ?? ?? ?? ?? 84 c0 0f 85 ?? ?? ?? ?? 68 ?? ?? ?? ?? e8"
 
 
 void Exploit() {
-    if (MH_Initialize() != MH_OK) {
-        MessageBoxA(nullptr, "MH Init Error!", "ERROR", MB_ICONERROR | MB_OK);
+    static auto JNEPointer = static_cast<void*>(sig(GetModuleHandleA(NULL), Sig_text));
+    static auto JNEPointer2 = static_cast<char*>(JNEPointer);
+    SIZE_T size = 1;
+    DWORD oldProtection;
+    if (!VirtualProtect(JNEPointer, size, PAGE_READWRITE, &oldProtection)) {
+        MessageBoxA(nullptr, "Failed to change memory protection.", "ERROR", MB_ICONERROR | MB_OK);
         exit(1);
     }
-    static const auto FileVerify_MainPointer = static_cast<void*>(sig(GetModuleHandleA(NULL), Sig_text));
-    if (FileVerify_MainPointer != nullptr) {
-        if (MH_CreateHook(FileVerify_MainPointer, &Hk_sub_7FF67F97A5A0, reinterpret_cast<LPVOID*>(&Org_sub_7FF67F97A5A0)) != MH_OK) {
-            MessageBoxA(nullptr, "MH Hook Patch failed!", "ERROR", MB_ICONERROR | MB_OK);
-            exit(1);
-        }
-        if (MH_EnableHook(FileVerify_MainPointer) != MH_OK) {
-            MessageBoxA(nullptr, "MH Enable Hook Patch failed!", "ERROR", MB_ICONERROR | MB_OK);
-            exit(1);
-        }
+
+    *JNEPointer2 = 0x74;
+
+    DWORD oldProtection_;
+    if (!VirtualProtect(JNEPointer, size, oldProtection, &oldProtection_)) {
+        MessageBoxA(nullptr, "Failed to recovery memory protection.", "ERROR", MB_ICONERROR | MB_OK);
+        exit(1);
     }
 }
 
