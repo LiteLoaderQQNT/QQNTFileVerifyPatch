@@ -1,4 +1,5 @@
 #include <MinHook.h>
+#include <psapi.h>
 #include "nt.h"
 #include "scanner.h"
 #define Sig_text "57 41 56 41 55 41 54 56 57 55 53 48 81 ec ?? ?? ?? ?? 0f 29 bc 24 ?? ?? ?? ?? 0f 29 b4 24 ?? ?? ?? ?? 48 8b 05 ?? ?? ?? ?? 48 31 e0 48 89 84 24 ?? ?? ?? ?? b9"
@@ -34,9 +35,25 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
     switch (fdwReason)
     {
     case DLL_PROCESS_ATTACH:
+    {
+        HANDLE hProc = GetCurrentProcess();
+        std::wstring processName(MAX_PATH, L'\0');
+        GetModuleFileNameEx(hProc, nullptr, &processName[0], MAX_PATH);
         DisableThreadLibraryCalls(hinstDLL);
-        Exploit();
+        if (processName.find(L"QQ.exe") != std::wstring::npos) {
+            if (wcsstr(GetCommandLine(), L"--") != NULL) {
+                return true;
+            }
+            Exploit();
+            return true;
+        }
+        else
+        {
+            return true;
+        }
+
         break;
+    }
     case DLL_THREAD_ATTACH:
         break;
     case DLL_THREAD_DETACH:
@@ -64,3 +81,4 @@ extern "C" __declspec(dllexport) void SymInitialize() {}
 extern "C" __declspec(dllexport) void SymSetOptions() {}
 extern "C" __declspec(dllexport) void SymSetSearchPathW() {}
 extern "C" __declspec(dllexport) void UnDecorateSymbolName() {}
+extern "C" __declspec(dllexport) void MiniDumpWriteDump() {}
