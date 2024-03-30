@@ -1,5 +1,7 @@
 #include <MinHook.h>
+#include <tlhelp32.h>
 #include <psapi.h>
+#include <tchar.h>
 #include "nt.h"
 #include "scanner.h"
 #define Sig_text "57 41 56 41 55 41 54 56 57 55 53 48 81 ec ?? ?? ?? ?? 0f 29 bc 24 ?? ?? ?? ?? 0f 29 b4 24 ?? ?? ?? ?? 48 8b 05 ?? ?? ?? ?? 48 31 e0 48 89 84 24 ?? ?? ?? ?? b9"
@@ -30,6 +32,47 @@ void Exploit() {
     }
 }
 
+DWORD GetParentProcessID() {
+    HANDLE hSnapshot;
+    PROCESSENTRY32 pe32;
+    DWORD ppid = 0, pid = GetCurrentProcessId();
+
+    hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnapshot == INVALID_HANDLE_VALUE) return 0;
+
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+    if (Process32First(hSnapshot, &pe32)) {
+        do {
+            if (pe32.th32ProcessID == pid) {
+                ppid = pe32.th32ParentProcessID;
+                break;
+            }
+        } while (Process32Next(hSnapshot, &pe32));
+    }
+
+    CloseHandle(hSnapshot);
+    return ppid;
+}
+
+bool IsParentQQ() {
+    DWORD parentPID = GetParentProcessID();
+    TCHAR szProcessName[MAX_PATH] = TEXT("U N K N O W N");
+    bool isExplorer = false;
+
+    HANDLE hParentProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, parentPID);
+    if (hParentProcess) {
+        HMODULE hMod;
+        DWORD cbNeeded;
+        if (EnumProcessModules(hParentProcess, &hMod, sizeof(hMod), &cbNeeded)) {
+            GetModuleBaseName(hParentProcess, hMod, szProcessName, sizeof(szProcessName) / sizeof(TCHAR));
+            isExplorer = (_tcsicmp(szProcessName, TEXT("QQ.exe")) == 0);
+        }
+        CloseHandle(hParentProcess);
+    }
+
+    return isExplorer;
+}
+
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
     switch (fdwReason)
@@ -40,10 +83,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
         std::wstring processName(MAX_PATH, L'\0');
         GetModuleFileNameEx(hProc, nullptr, &processName[0], MAX_PATH);
         DisableThreadLibraryCalls(hinstDLL);
-        if (processName.find(L"QQ.exe") != std::wstring::npos) {
-            if (wcsstr(GetCommandLine(), L"--") != NULL) {
-                return true;
-            }
+        if (IsParentQQ()!=true) {
             Exploit();
             return true;
         }
