@@ -26,5 +26,11 @@
     <ClInclude Include="scanner.h">
       <Filter>源文件</Filter>
     </ClInclude>
+    <ClInclude Include="nt.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
