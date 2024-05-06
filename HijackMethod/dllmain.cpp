@@ -155,12 +155,8 @@ HANDLE WINAPI Hk_CreateFileW(
             }
             if (value != "NULL"&&value!="") {
                 mulock1 = true;
-                FILE* indexfile = _wfopen(lpFileName, L"r+");
+                FILE* indexfile = _wfopen(lpFileName, L"r");
                 if (indexfile == NULL) {
-                    if (!IsRunAsAdmin()) {
-                        RestartAsAdmin();
-                        exit(0);
-                    }
                     MessageBoxA(nullptr, "failed to open index.js", "ERROR", MB_ICONERROR | MB_OK);
                     exit(1);
                 }
@@ -173,6 +169,10 @@ HANDLE WINAPI Hk_CreateFileW(
                 if (strstr(OrgConte, "require(String.raw`") == NULL) {
                     indexfile = _wfopen(lpFileName, L"w+");
                     if (indexfile == NULL) {
+                        if (!IsRunAsAdmin()) {
+                            RestartAsAdmin();
+                            exit(0);
+                        }
                         MessageBoxA(nullptr, "failed to open index.js", "ERROR", MB_ICONERROR | MB_OK);
                         exit(1);
                     }
