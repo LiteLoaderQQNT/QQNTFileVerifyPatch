@@ -310,6 +310,7 @@ extern "C" __declspec(dllexport) void SymGetSymFromAddr64() {}
 extern "C" __declspec(dllexport) void SymGetSearchPathW() {}
 extern "C" __declspec(dllexport) void SymInitialize() {}
 extern "C" __declspec(dllexport) void SymSetOptions() {}
+extern "C" __declspec(dllexport) void SymGetOptions() {}
 extern "C" __declspec(dllexport) void SymSetSearchPathW() {}
 extern "C" __declspec(dllexport) void UnDecorateSymbolName() {}
 extern "C" __declspec(dllexport) void MiniDumpWriteDump() {}
