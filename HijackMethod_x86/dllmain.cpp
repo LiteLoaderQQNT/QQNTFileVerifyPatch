@@ -11,7 +11,7 @@
 #include <iostream>
 #include <fstream>
 #define Sig_text "75 ?? e8 ?? ?? ?? ?? 84 c0 0f 85 ?? ?? ?? ?? 68 ?? ?? ?? ?? e8"
-
+#define Sig_text2 "75 ?? e8 ?? ?? ?? ?? 84 c0 8d 7d" // Ver <=9.9.12_25765
 
 inline bool mulock1 = false;
 inline bool mulock2 = false;
@@ -187,6 +187,13 @@ HANDLE WINAPI Hk_CreateFileW(
 
 void Exploit() {
     static auto JNEPointer = static_cast<void*>(sig(GetModuleHandleA(NULL), Sig_text));
+    if (JNEPointer == nullptr) {
+        JNEPointer = static_cast<void*>(sig(GetModuleHandleA(NULL), Sig_text2));
+        if (JNEPointer == nullptr) {
+            MessageBoxA(nullptr, "Sig outdated", "ERROR", MB_ICONERROR | MB_OK);
+            exit(1);
+        }
+    }
     static auto JNEPointer2 = static_cast<char*>(JNEPointer);
     SIZE_T size = 1;
     DWORD oldProtection;
