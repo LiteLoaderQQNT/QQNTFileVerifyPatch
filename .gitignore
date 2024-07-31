@@ -12,3 +12,6 @@ HijackMethod/x64
 /HijackMethod/Release
 /HijackMethod_x86/Release
 /HijackMethod_x86/Debug
+/HijackMethod_arm64/dependencies/Detours/lib.X64
+/HijackMethod_arm64/ARM64/Release
+/ARM64/Release
