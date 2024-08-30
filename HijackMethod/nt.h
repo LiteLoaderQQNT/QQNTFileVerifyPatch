@@ -21,3 +21,10 @@ typedef DWORD(WINAPI* def_GetFileSize)(
     _In_            HANDLE  hFile,
     _Out_opt_ LPDWORD lpFileSizeHigh
 );
+
+typedef int(WINAPI* def_MessageBoxW)(
+    _In_opt_ HWND    hWnd,
+    _In_opt_ LPCWSTR lpText,
+    _In_opt_ LPCWSTR lpCaption,
+    _In_           UINT    uType
+    );

@@ -8,3 +8,10 @@ typedef HANDLE(WINAPI* def_CreateFileW)(
     _In_           DWORD                 dwFlagsAndAttributes,
     _In_opt_ HANDLE                hTemplateFile
     );
+
+typedef int(WINAPI* def_MessageBoxW)(
+    _In_opt_ HWND    hWnd,
+    _In_opt_ LPCWSTR lpText,
+    _In_opt_ LPCWSTR lpCaption,
+    _In_           UINT    uType
+    );

@@ -10,11 +10,11 @@
 #include <AclAPI.h>
 #pragma comment (lib,"detours.lib") //building by ur self 
 
-#define Sig_text "F3 53 BA A9 F5 5B 01 A9 F7 63 02 A9 F9 6B 03 A9 FB 73 04 A9 FD 7B 05 A9 FD 43 01 91 FF C3 0F D1 48 D3 04 D0 C0 24 80 52 08 05 40 F9 A8 03 1A F8 5B 35 F3 94"
+#define Sig_text "F3 53 BA A9 F5 5B 01 A9 F7 63 02 A9 F9 6B 03 A9 FB 73 04 A9 FD 7B 05 A9 FD 43 01 91 FF C3 0F D1 48 D3 04 D0 C0 24 80 52 08 05 40 F9 A8 03 1A F8"
 
 
 def_CreateFileW Org_CreateFileW = CreateFileW;
-
+def_MessageBoxW Org_MessageBoxW = MessageBoxW;
 inline bool mulock1 = false;
 inline bool mulock2 = false;
 
@@ -26,6 +26,93 @@ __int64 Hk_sub_14032B99C() {
     return 1;
 }
 
+void GetCallStack(std::string& callStack) {
+    CONTEXT context;
+    RtlCaptureContext(&context);
+
+    DWORD64 imageBase;
+    DWORD64 controlPc = context.Pc;
+    DWORD64 frameBase = context.Fp;
+
+    HMODULE hKernel32 = GetModuleHandleA("kernel32.dll");
+    HMODULE hNtdll = GetModuleHandleA("ntdll.dll");
+    MODULEINFO kernel32Info = { 0 };
+    MODULEINFO ntdllInfo = { 0 };
+    GetModuleInformation(GetCurrentProcess(), hKernel32, &kernel32Info, sizeof(kernel32Info));
+    GetModuleInformation(GetCurrentProcess(), hNtdll, &ntdllInfo, sizeof(ntdllInfo));
+
+
+    std::ostringstream oss;
+
+    oss << "已触发QQ文件校验退出函数, 一般情况下有可能是LLQQNT框架/插件导致的问题\n有任何问题请到Repo开issue, 带上你的截图\nCallStack:\n";
+
+    /*Skip self*/
+    UNWIND_HISTORY_TABLE historyTable;
+    ZeroMemory(&historyTable, sizeof(UNWIND_HISTORY_TABLE));
+    PRUNTIME_FUNCTION pFunction = RtlLookupFunctionEntry(controlPc, &imageBase, &historyTable);
+    if (pFunction != NULL) {
+        PVOID handlerData;
+        ULONG64 establisherFrame;
+        RtlVirtualUnwind(UNW_FLAG_NHANDLER, imageBase, controlPc, pFunction, &context, &handlerData, &establisherFrame, NULL);
+        controlPc = context.Pc;
+        frameBase = context.Fp;
+    }
+    /*---------*/
+
+    for (int i = 0; i < 16; ++i) {
+        if (controlPc == 0) {
+            break;
+        }
+
+        if ((controlPc >= (DWORD64)hKernel32 && controlPc < (DWORD64)hKernel32 + kernel32Info.SizeOfImage))
+        {
+            oss << "in module kernel32.dll | Maybe BaseThreadInitThunk\n";
+        }
+        else if ((controlPc >= (DWORD64)hNtdll && controlPc < (DWORD64)hNtdll + ntdllInfo.SizeOfImage))
+        {
+            oss << "in module ntdll.dll | Maybe RtlUserThreadStart\n";
+        }
+
+        oss << "Address: 0x" << std::hex << controlPc << std::endl;
+
+        BYTE buffer[32];
+        SIZE_T bytesRead;
+        if (ReadProcessMemory(GetCurrentProcess(), (LPCVOID)controlPc, buffer, sizeof(buffer), &bytesRead))
+        {
+            oss << "Data: ";
+            for (SIZE_T j = 0; j < bytesRead; ++j) {
+                oss << std::setw(2) << std::setfill('0') << std::hex << (int)buffer[j] << " ";
+            }
+            oss << std::endl;
+        }
+        else
+        {
+            oss << "Failed to read memory.\n";
+        }
+
+        oss << "\n";
+
+        UNWIND_HISTORY_TABLE historyTable;
+        ZeroMemory(&historyTable, sizeof(UNWIND_HISTORY_TABLE));
+
+        // Unwind to next frame
+        PRUNTIME_FUNCTION pFunction = RtlLookupFunctionEntry(controlPc, &imageBase, &historyTable);
+        if (pFunction == NULL)
+        {
+            controlPc = (DWORD64)(*(PULONG64)controlPc);
+        }
+        else
+        {
+            PVOID handlerData;
+            ULONG64 establisherFrame;
+            RtlVirtualUnwind(UNW_FLAG_NHANDLER, imageBase, controlPc, pFunction, &context, &handlerData, &establisherFrame, NULL);
+            controlPc = context.Pc;
+            frameBase = context.Fp;
+        }
+    }
+
+    callStack = oss.str();
+}
 
 bool IsRunAsAdmin()
 {
@@ -196,6 +283,20 @@ HANDLE WINAPI Hk_CreateFileW(
     return Org_CreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 }
 
+int WINAPI Hk_MessageBoxW(
+    _In_opt_ HWND    hWnd,
+    _In_opt_ LPCWSTR lpText,
+    _In_opt_ LPCWSTR lpCaption,
+    _In_           UINT    uType
+) {
+    LPCWSTR text = L"退出";
+    if (wcscmp(lpCaption, text) == 0) {
+        std::string data;
+        //GetCallStack(data);
+        MessageBoxA(hWnd, data.c_str(), "Congratulation", MB_OK);
+    }
+    return Org_MessageBoxW(hWnd, lpText, lpCaption, uType);
+}
 
 DWORD GetParentProcessID() {
     HANDLE hSnapshot;
@@ -242,6 +343,7 @@ void InitHookFramework() {
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)Org_CreateFileW, Hk_CreateFileW);
+    DetourAttach(&(PVOID&)Org_MessageBoxW, Hk_MessageBoxW);
     DetourAttach(&(PVOID&)Org_sub_14032B99C, Hk_sub_14032B99C);
     if (DetourTransactionCommit()!=NO_ERROR) {
         MessageBoxA(nullptr, "failed to create hook", "ERROR", MB_OK | MB_ICONERROR);

@@ -18,12 +18,101 @@ inline bool mulock2 = false;
 def_CreateFileW Org_CreateFileW = NULL;
 def_ReadFile Org_ReadFile = NULL;
 def_GetFileSize Org_GetFileSize = NULL;
+def_MessageBoxW Org_MessageBoxW = MessageBoxW;
 
 typedef __int64(*def_sub7FF67F97A5A0)();
 def_sub7FF67F97A5A0 Org_sub_7FF67F97A5A0 = NULL;
 
 __int64 Hk_sub_7FF67F97A5A0() {
     return (unsigned int)"r.json";
+}
+
+void GetCallStack(std::string& callStack) {
+    CONTEXT context;
+    RtlCaptureContext(&context);
+
+    DWORD64 imageBase;
+    DWORD64 controlPc = context.Rip; //EIP
+    DWORD64 frameBase = context.Rbp; //EBP
+
+    HMODULE hKernel32 = GetModuleHandleA("kernel32.dll");
+    HMODULE hNtdll = GetModuleHandleA("ntdll.dll");
+    MODULEINFO kernel32Info = { 0 };
+    MODULEINFO ntdllInfo = { 0 };
+    GetModuleInformation(GetCurrentProcess(), hKernel32, &kernel32Info, sizeof(kernel32Info));
+    GetModuleInformation(GetCurrentProcess(), hNtdll, &ntdllInfo, sizeof(ntdllInfo));
+
+
+    std::ostringstream oss;
+
+    oss << "已触发QQ文件校验退出函数, 一般情况下有可能是LLQQNT框架/插件导致的问题\n有任何问题请到Repo开issue, 带上你的截图\nCallStack:\n";
+
+    /*Skip self*/
+    UNWIND_HISTORY_TABLE historyTable;
+    ZeroMemory(&historyTable, sizeof(UNWIND_HISTORY_TABLE));
+    PRUNTIME_FUNCTION pFunction = RtlLookupFunctionEntry(controlPc, &imageBase, &historyTable);
+    if (pFunction != NULL) {
+        PVOID handlerData;
+        ULONG64 establisherFrame;
+        RtlVirtualUnwind(UNW_FLAG_NHANDLER, imageBase, controlPc, pFunction, &context, &handlerData, &establisherFrame, NULL);
+        controlPc = context.Rip;
+        frameBase = context.Rbp;
+    }
+    /*---------*/
+
+    for (int i = 0; i < 16; ++i) {
+        if (controlPc == 0) {
+            break;
+        }
+
+        if ((controlPc >= (DWORD64)hKernel32 && controlPc < (DWORD64)hKernel32 + kernel32Info.SizeOfImage))
+        {
+            oss << "in module kernel32.dll | Maybe BaseThreadInitThunk\n";
+        }
+        else if ((controlPc >= (DWORD64)hNtdll && controlPc < (DWORD64)hNtdll + ntdllInfo.SizeOfImage))
+        {
+            oss << "in module ntdll.dll | Maybe RtlUserThreadStart\n";
+        }
+
+        oss << "Address: 0x" << std::hex << controlPc << std::endl;
+
+        BYTE buffer[32];
+        SIZE_T bytesRead;
+        if (ReadProcessMemory(GetCurrentProcess(), (LPCVOID)controlPc, buffer, sizeof(buffer), &bytesRead)) 
+        {
+            oss << "Data: ";
+            for (SIZE_T j = 0; j < bytesRead; ++j) {
+                oss << std::setw(2) << std::setfill('0') << std::hex << (int)buffer[j] << " ";
+            }
+            oss << std::endl;
+        }
+        else 
+        {
+            oss << "Failed to read memory.\n";
+        }
+
+        oss << "\n";
+
+        UNWIND_HISTORY_TABLE historyTable;
+        ZeroMemory(&historyTable, sizeof(UNWIND_HISTORY_TABLE));
+
+        // Unwind to next frame
+        PRUNTIME_FUNCTION pFunction = RtlLookupFunctionEntry(controlPc, &imageBase, &historyTable);
+        if (pFunction == NULL)
+        {
+            controlPc = (DWORD64)(*(PULONG64)controlPc);
+        }
+        else
+        {
+            PVOID handlerData;
+            ULONG64 establisherFrame;
+            RtlVirtualUnwind(UNW_FLAG_NHANDLER, imageBase, controlPc, pFunction, &context, &handlerData, &establisherFrame, NULL);
+            controlPc = context.Rip;
+            frameBase = context.Rbp;
+        }
+    }
+
+    callStack = oss.str();
 }
 
 bool IsRunAsAdmin()
@@ -195,13 +284,27 @@ HANDLE WINAPI Hk_CreateFileW(
     return Org_CreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 }
 
-
+int WINAPI Hk_MessageBoxW(
+    _In_opt_ HWND    hWnd,
+    _In_opt_ LPCWSTR lpText,
+    _In_opt_ LPCWSTR lpCaption,
+    _In_           UINT    uType
+) {
+    LPCWSTR text = L"退出";
+    if (wcscmp(lpCaption, text) == 0) {
+        std::string data;
+        GetCallStack(data);
+        MessageBoxA(hWnd, data.c_str(), "Congratulation", MB_OK);
+    }
+    return Org_MessageBoxW(hWnd,lpText,lpCaption,uType);
+}
 
 void Exploit() {
     if (MH_Initialize() != MH_OK) {
         MessageBoxA(nullptr, "MH Init Error!", "ERROR", MB_ICONERROR | MB_OK);
         exit(1);
     }
+    
     static const auto FileVerify_MainPointer = static_cast<void*>(sig(GetModuleHandleA(NULL), Sig_text));
 
     if (FileVerify_MainPointer != nullptr) {
@@ -210,7 +313,13 @@ void Exploit() {
             exit(1);
         }
     }
-
+    
+    
+    if (MH_CreateHook(&MessageBoxW, &Hk_MessageBoxW, reinterpret_cast<LPVOID*>(&Org_MessageBoxW)) != MH_OK) {
+        MessageBoxA(nullptr, "MH Hook MessageBoxW failed!", "ERROR", MB_ICONERROR | MB_OK);
+        exit(1);
+    }
+    
     if (MH_CreateHook(&CreateFileW, &Hk_CreateFileW, reinterpret_cast<LPVOID*>(&Org_CreateFileW)) != MH_OK) {
         MessageBoxA(nullptr, "MH Hook CreateFileW failed!", "ERROR", MB_ICONERROR | MB_OK);
         exit(1);
