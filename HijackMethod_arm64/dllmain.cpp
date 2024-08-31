@@ -10,7 +10,7 @@
 #include <AclAPI.h>
 #pragma comment (lib,"detours.lib") //building by ur self 
 
-#define Sig_text "F3 53 BA A9 F5 5B 01 A9 F7 63 02 A9 F9 6B 03 A9 FB 73 04 A9 FD 7B 05 A9 FD 43 01 91 FF C3 0F D1 48 D3 04 D0 C0 24 80 52 08 05 40 F9 A8 03 1A F8"
+#define Sig_text "F3 53 BA A9 F5 5B 01 A9 F7 63 02 A9 F9 6B 03 A9 FB 73 04 A9 FD 7B 05 A9 FD 43 01 91 FF C3 0F D1 48 D3 04 ?? C0 24 80 52 08 05 40 F9 A8 03 1A F8"
 
 
 def_CreateFileW Org_CreateFileW = CreateFileW;
