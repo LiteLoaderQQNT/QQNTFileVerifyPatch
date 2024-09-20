@@ -352,7 +352,7 @@ void InitHookFramework() {
 }
 
 void Exploit() {
-    Org_sub_14032B99C = (def_sub14032B99)static_cast<void*>(sig(GetModuleHandleA(NULL), Sig_text));
+    Org_sub_14032B99C = (def_sub14032B99)static_cast<void*>(sig(GetModuleHandleA("QQNT.dll"), Sig_text));
     if (Org_sub_14032B99C == nullptr) {
         MessageBoxA(nullptr, "Sig not found!", "ERROR", MB_OK|MB_ICONERROR);
         exit(1);

@@ -2,7 +2,7 @@
 #include <tlhelp32.h>
 #include <psapi.h>
 #include <tchar.h>
-#include <windows.h>
+#include <Windows.h>
 #include <aclapi.h>
 #include <algorithm>
 #include <iostream>
@@ -10,21 +10,28 @@
 #include "nt.h"
 #include "scanner.h"
 #include "json.hpp"
-#define Sig_text "57 41 56 41 55 41 54 56 57 55 53 48 81 ec ?? ?? ?? ?? 0f 29 bc 24 ?? ?? ?? ?? 0f 29 b4 24 ?? ?? ?? ?? 48 8b 05 ?? ?? ?? ?? 48 31 e0 48 89 84 24 ?? ?? ?? ?? b9"
+#define Sig_text "57 41 56 41 55 41 54 56 57 55 53 48 81 ec ?? ?? ?? ?? 0f 29 bc 24 ?? ?? ?? ?? 0f 29 b4 24 ?? ?? ?? ?? 48 8b 05 ?? ?? ?? ?? 48 31 e0 48 89 84 24 ?? ?? ?? ?? b9" //Old Sig
+#define Sig_text2 "57 41 56 41 55 41 54 56 57 55 53 48 81 ec ?? ?? ?? ?? 0f 29 b4 24 ?? ?? ?? ?? 48 8b 05 ?? ?? ?? ?? 48 31 e0 48 89 84 24 ?? ?? ?? ?? b9"
 
 inline bool mulock1 = false;
 inline bool mulock2 = false;
+
+inline bool OldQQ = false;
 
 def_CreateFileW Org_CreateFileW = NULL;
 def_ReadFile Org_ReadFile = NULL;
 def_GetFileSize Org_GetFileSize = NULL;
 def_MessageBoxW Org_MessageBoxW = MessageBoxW;
+//def_LoadLibraryExW Org_LoadLibraryExW = LoadLibraryExW;
+//def_LoadLibraryExA Org_LoadLibraryExA = LoadLibraryExA;
+def_LdrRegisterDllNotification Org_LdrRegisterDllNotification = NULL;
+
 
 typedef __int64(*def_sub7FF67F97A5A0)();
 def_sub7FF67F97A5A0 Org_sub_7FF67F97A5A0 = NULL;
 
 __int64 Hk_sub_7FF67F97A5A0() {
-    return (unsigned int)"r.json";
+    return 1;
 }
 
 void GetCallStack(std::string& callStack) {
@@ -209,8 +216,8 @@ HANDLE WINAPI Hk_CreateFileW(
     _In_           DWORD                 dwFlagsAndAttributes,
     _In_opt_ HANDLE                hTemplateFile
 ) {
-
-    if (wcsstr(lpFileName, L"\\resources\\app\\app_launcher\\index.js") != NULL&& mulock1 !=true&&mulock2!=true)
+    
+    if (wcsstr(lpFileName, L"\\resources\\app\\app_launcher\\index.js") != NULL&& mulock1 !=true&&mulock2!=true&&OldQQ==true)
     {
 
         if (_taccess(L"PatchConfig.json", 0) != 0) {
@@ -305,7 +312,24 @@ void Exploit() {
         exit(1);
     }
     
-    static const auto FileVerify_MainPointer = static_cast<void*>(sig(GetModuleHandleA(NULL), Sig_text));
+    void* FileVerify_MainPointer = nullptr;
+    if (OldQQ) 
+    {
+        FileVerify_MainPointer = static_cast<void*>(sig(GetModuleHandleA(NULL), Sig_text));
+    }
+    else
+    {
+        FileVerify_MainPointer = static_cast<void*>(sig(GetModuleHandleA("QQNT.dll"), Sig_text2));
+    }
+
+    HMODULE SelfModule = GetModuleHandleA("dbghelp.dll");
+    MODULEINFO SelfModuleInfo = { 0 };
+    GetModuleInformation(GetCurrentProcess(), SelfModule, &SelfModuleInfo, sizeof(SelfModuleInfo));
+    
+    if ((FileVerify_MainPointer >= SelfModule && FileVerify_MainPointer < SelfModule+SelfModuleInfo.SizeOfImage)) {
+        MessageBoxA(nullptr, "Sig not found!", "ERROR", MB_ICONERROR | MB_OK);
+        exit(1);
+    }
 
     if (FileVerify_MainPointer != nullptr) {
         if (MH_CreateHook(FileVerify_MainPointer, &Hk_sub_7FF67F97A5A0, reinterpret_cast<LPVOID*>(&Org_sub_7FF67F97A5A0)) != MH_OK) {
@@ -313,8 +337,12 @@ void Exploit() {
             exit(1);
         }
     }
-    
-    
+    else
+    {
+        MessageBoxA(nullptr, "Sig not found!", "ERROR", MB_ICONERROR | MB_OK);
+        exit(1);
+    }
+
     if (MH_CreateHook(&MessageBoxW, &Hk_MessageBoxW, reinterpret_cast<LPVOID*>(&Org_MessageBoxW)) != MH_OK) {
         MessageBoxA(nullptr, "MH Hook MessageBoxW failed!", "ERROR", MB_ICONERROR | MB_OK);
         exit(1);
@@ -372,19 +400,48 @@ bool IsParentQQ() {
     return IsQQ;
 }
 
+void CALLBACK DLLNotification(ULONG Reason, PLDR_DLL_NOTIFICATION_DATA NotificationData, PVOID Context) {
+    if (Reason == LDR_DLL_NOTIFICATION_REASON_LOADED) {
+        wprintf(L"[LdrDllNotification] %s\n", NotificationData->Loaded.FullDllName->Buffer);
+        if (wcsstr(NotificationData->Loaded.FullDllName->Buffer, L"QQNT.dll")!=NULL) {
+            Exploit();
+        }
+    }
+    return;
+}
+
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
     switch (fdwReason)
     {
     case DLL_PROCESS_ATTACH:
     {
-        //MessageBoxA(nullptr,"Enter Entry","DEBUG",MB_OK);
+        /***DEBUG
+        AllocConsole();
+        freopen("CONIN$", "r", stdin);
+        freopen("CONOUT$", "w", stdout);
+        freopen("CONOUT$", "w", stderr);
+        ***/
+
+        PVOID Cookie;
+        Org_LdrRegisterDllNotification = (def_LdrRegisterDllNotification)GetProcAddress(GetModuleHandleA("ntdll.dll"), "LdrRegisterDllNotification");
+
         HANDLE hProc = GetCurrentProcess();
         std::wstring processName(MAX_PATH, L'\0');
         GetModuleFileNameEx(hProc, nullptr, &processName[0], MAX_PATH);
         DisableThreadLibraryCalls(hinstDLL);
         if (IsParentQQ() != true || wcsstr(GetCommandLine(), L"--from-multiple-login") != NULL) {
-            Exploit();
+
+            if (_taccess(L"ffmpeg.dll",0)==0)
+            {
+                OldQQ = true;
+                Exploit();
+            }
+            else
+            {
+                Org_LdrRegisterDllNotification(0, DLLNotification, NULL, &Cookie); //New Exploit
+            }
+
             return true;
         }
         else

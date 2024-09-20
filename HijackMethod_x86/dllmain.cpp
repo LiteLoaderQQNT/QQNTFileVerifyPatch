@@ -12,10 +12,15 @@
 #include <fstream>
 #define Sig_text "75 ?? e8 ?? ?? ?? ?? 84 c0 0f 85 ?? ?? ?? ?? 68 ?? ?? ?? ?? e8"
 #define Sig_text2 "75 ?? e8 ?? ?? ?? ?? 84 c0 8d 7d" // Ver <=9.9.12_25765
+#define Sig_text3 "85 ?? ?? ?? ?? 80 3d ?? ?? ?? ?? ?? 75 ?? a0 ?? ?? ?? ?? 84 c0 74 ?? b9 ?? ?? ?? ?? 34 ?? 88 41 ?? 8a 01 41 84 c0 75 ?? c6 05 ?? ?? ?? ?? ?? bf ?? ?? ?? ?? 57 e8 ?? ?? ?? ?? 83 c4 ?? 50 57 68 ?? ?? ?? ?? e8 ?? ?? ?? ?? 83 c4 ?? 89 c1 6a ?? e8 ?? ?? ?? ?? 89 46 ?? 8b 08 8b 49 ?? 01 c1 8d be ?? ?? ?? ?? 57 e8 ?? ?? ?? ?? 89 f9 68 ?? ?? ?? ?? e8 ?? ?? ?? ?? 89 c7" //Ver 28060
 
 inline bool mulock1 = false;
 inline bool mulock2 = false;
+
+inline bool OldQQ = false;
+
 def_CreateFileW Org_CreateFileW = NULL;
+def_LdrRegisterDllNotification Org_LdrRegisterDllNotification = NULL;
 
 bool IsRunAsAdmin()
 {
@@ -111,7 +116,7 @@ HANDLE WINAPI Hk_CreateFileW(
     _In_           DWORD                 dwFlagsAndAttributes,
     _In_opt_ HANDLE                hTemplateFile
 ) {
-    if (wcsstr(lpFileName, L"\\resources\\app\\app_launcher\\index.js") != NULL && mulock1 != true && mulock2 != true)
+    if (wcsstr(lpFileName, L"\\resources\\app\\app_launcher\\index.js") != NULL && mulock1 != true && mulock2 != true&&OldQQ==true)
     {
 
         if (_taccess(L"PatchConfig.json", 0) != 0) {
@@ -186,14 +191,38 @@ HANDLE WINAPI Hk_CreateFileW(
 }
 
 void Exploit() {
-    static auto JNEPointer = static_cast<void*>(sig(GetModuleHandleA(NULL), Sig_text));
-    if (JNEPointer == nullptr) {
-        JNEPointer = static_cast<void*>(sig(GetModuleHandleA(NULL), Sig_text2));
+    void* JNEPointer = nullptr;
+
+    if (OldQQ) 
+    {
+        JNEPointer = static_cast<void*>(sig(GetModuleHandleA(NULL), Sig_text));
         if (JNEPointer == nullptr) {
-            MessageBoxA(nullptr, "Sig outdated", "ERROR", MB_ICONERROR | MB_OK);
-            exit(1);
+            JNEPointer = static_cast<void*>(sig(GetModuleHandleA(NULL), Sig_text2));
+            if (JNEPointer == nullptr) {
+                MessageBoxA(nullptr, "Sig outdated", "ERROR", MB_ICONERROR | MB_OK);
+                exit(1);
+            }
         }
     }
+    else
+    {
+        JNEPointer = static_cast<void*>(sig(GetModuleHandleA("QQNT.dll"), Sig_text3));
+    }
+
+    HMODULE SelfModule = GetModuleHandleA("dbghelp.dll");
+    MODULEINFO SelfModuleInfo = { 0 };
+    GetModuleInformation(GetCurrentProcess(), SelfModule, &SelfModuleInfo, sizeof(SelfModuleInfo));
+
+    if ((JNEPointer >= SelfModule && JNEPointer < SelfModule + SelfModuleInfo.SizeOfImage)) {
+        MessageBoxA(nullptr, "Sig not found!", "ERROR", MB_ICONERROR | MB_OK);
+        exit(1);
+    }
+
+    if (JNEPointer == nullptr) {
+        MessageBoxA(nullptr, "Sig outdated", "ERROR", MB_ICONERROR | MB_OK);
+        exit(1);
+    }
+    
     static auto JNEPointer2 = static_cast<char*>(JNEPointer);
     SIZE_T size = 1;
     DWORD oldProtection;
@@ -201,8 +230,14 @@ void Exploit() {
         MessageBoxA(nullptr, "Failed to change memory protection.", "ERROR", MB_ICONERROR | MB_OK);
         exit(1);
     }
-
-    *JNEPointer2 = 0x74;
+    if (OldQQ) {
+        *JNEPointer2 = 0x74;
+    }
+    else
+    {
+        *JNEPointer2 = 0x84;
+    }
+    
 
     DWORD oldProtection_;
     if (!VirtualProtect(JNEPointer, size, oldProtection, &oldProtection_)) {
@@ -268,18 +303,47 @@ bool IsParentQQ() {
     return IsQQ;
 }
 
+void CALLBACK DLLNotification(ULONG Reason, PLDR_DLL_NOTIFICATION_DATA NotificationData, PVOID Context) {
+    if (Reason == LDR_DLL_NOTIFICATION_REASON_LOADED) {
+
+        wprintf(L"[LdrDllNotification] %s\n", NotificationData->Loaded.FullDllName->Buffer);
+        if (wcsstr(NotificationData->Loaded.FullDllName->Buffer, L"QQNT.dll") != NULL) {
+            Exploit();
+        }
+    }
+    return;
+}
+
+
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
     switch (fdwReason)
     {
     case DLL_PROCESS_ATTACH:
     {
+        //MessageBoxA(nullptr,"Enter Entry","DEBUG",MB_OK);
+
+
+        PVOID Cookie;
+        Org_LdrRegisterDllNotification = (def_LdrRegisterDllNotification)GetProcAddress(GetModuleHandleA("ntdll.dll"), "LdrRegisterDllNotification");
+
         HANDLE hProc = GetCurrentProcess();
         std::wstring processName(MAX_PATH, L'\0');
         GetModuleFileNameEx(hProc, nullptr, &processName[0], MAX_PATH);
         DisableThreadLibraryCalls(hinstDLL);
         if (IsParentQQ() != true || wcsstr(GetCommandLine(), L"--from-multiple-login") != NULL) {
-            Exploit();
+            
+            if (_taccess(L"ffmpeg.dll", 0) == 0) 
+            {
+                OldQQ = true;
+                Exploit();
+            }
+            else
+            {
+                Org_LdrRegisterDllNotification(0, DLLNotification, NULL, &Cookie); //New Exploit
+            }
+            
+            
             return true;
         }
         else
