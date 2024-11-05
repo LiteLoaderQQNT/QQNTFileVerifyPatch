@@ -7,7 +7,8 @@
 1/22/2024补 根据[issue #1](https://github.com/LiteLoaderQQNT/QQNTFileVerifyPatch/issues/1) 测试,本Patcher在9.9.2-16183版本也适用 </br>
 前往Release下载以ADMIN身份运行,选中QQ文件会自动创建备份文件与修补,显示Patched!即为成功 </br>
 源码在Repo有 
-
+# 发起Issues前
+你得先搞清楚，是双击打开立马弹文件损坏还是登录之后或者是有个窗口一闪而过, 前者立马弹大概率是dbghelp outdated, 后者是由插件/LLQQNT框架被QQ检测导致的提示损坏, 框架/插件引起的提示文件损坏请耐心等待适配或者去原Repo提Issue
 # how2patch
 你需要有FindCrypt插件,IDA 7.7(我的7.7不知道为什么Patch没有应用到输入文件选项,后面我换成8.3了) </br>
 讲的不是很详细,有些加密解密的东东是凭经验看的没有细讲 </br>
